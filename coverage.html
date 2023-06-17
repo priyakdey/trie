@@ -1,0 +1,281 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>trie: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/priyakdey/trie/trie.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package trie
+
+import (
+        "strings"
+)
+
+type node struct {
+        key      uint8
+        children map[uint8]*node
+        isWord   bool
+}
+
+type Trie struct {
+        root *node
+}
+
+func New() *Trie <span class="cov8" title="1">{
+        return &amp;Trie{
+                root: &amp;node{
+                        key:      0,
+                        children: make(map[uint8]*node),
+                        isWord:   false,
+                },
+        }
+}</span>
+
+func (t *Trie) Insert(word string) <span class="cov8" title="1">{
+        children := t.root.children
+
+        var n *node
+        var ok bool
+
+        for i := 0; i &lt; len(word); i++ </span><span class="cov8" title="1">{
+                ch := word[i]
+                n, ok = children[ch]
+                if !ok </span><span class="cov8" title="1">{
+                        n = &amp;node{
+                                key:      ch,
+                                children: make(map[uint8]*node),
+                                isWord:   false,
+                        }
+                        children[ch] = n
+                }</span>
+
+                <span class="cov8" title="1">children = n.children</span>
+        }
+
+        <span class="cov8" title="1">n.isWord = true</span>
+
+}
+
+func (t *Trie) Contains(word string) bool <span class="cov8" title="1">{
+        node, ok := t.search(word)
+
+        if !ok </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">return node.isWord</span>
+}
+
+func (t *Trie) ContainsPrefix(prefix string) bool <span class="cov8" title="1">{
+        _, ok := t.search(prefix)
+
+        return ok
+}</span>
+
+func (t *Trie) WordsWithPrefix(prefix string) []string <span class="cov8" title="1">{
+        words := make([]string, 0)
+
+        node, ok := t.search(prefix)
+
+        if !ok </span><span class="cov8" title="1">{
+                return words
+        }</span>
+
+        // Since node is present, means prefix is present in the Trie.
+        // Prefill the buf with all characters from prefix so we can append
+        // to it to generate words.
+        <span class="cov8" title="1">buf := make([]string, len(prefix))
+
+        for i, ch := range prefix </span><span class="cov8" title="1">{
+                buf[i] = string(ch)
+        }</span>
+
+        <span class="cov8" title="1">t.addWords(node, &amp;buf, &amp;words)
+
+        return words</span>
+}
+
+func (t *Trie) Delete(word string) <span class="cov8" title="1">{
+        children := t.root.children
+
+        var (
+                // visitedNodes is the list of all nodes visited while reaching the `word``
+                visitedNodes = make([]*node, 0)
+                node         *node
+                ok           bool
+        )
+
+        for i := 0; i &lt; len(word); i++ </span><span class="cov8" title="1">{
+                ch := word[i]
+                node, ok = children[ch]
+                if !ok </span><span class="cov8" title="1">{
+                        return
+                }</span>
+
+                <span class="cov8" title="1">visitedNodes = append(visitedNodes, node)
+                children = node.children</span>
+        }
+
+        // set the isWord marker to false - soft delete the word if present
+        <span class="cov8" title="1">node.isWord = false
+
+        // iterate from the last node of the list and drop the node if no branches
+        // from that prefix or node is not a word marker
+        // no children = no branches form that node
+        for i := len(visitedNodes) - 1; i &gt;= 1; i-- </span><span class="cov8" title="1">{
+                n := visitedNodes[i]
+
+                if len(n.children) == 0 &amp;&amp; !n.isWord </span><span class="cov8" title="1">{
+                        parent := visitedNodes[i-1]
+                        delete(parent.children, n.key) // delete the reference from the paren node
+                }</span>
+        }
+
+        // check for the first character
+        <span class="cov8" title="1">firstCh := word[0]
+        n := t.root.children[firstCh]
+        if len(n.children) == 0 &amp;&amp; !n.isWord </span><span class="cov8" title="1">{
+                delete(t.root.children, n.key)
+        }</span>
+
+}
+
+func (t *Trie) search(word string) (*node, bool) <span class="cov8" title="1">{
+        children := t.root.children
+
+        var (
+                node *node
+                ok   bool
+        )
+
+        for i := 0; i &lt; len(word); i++ </span><span class="cov8" title="1">{
+                ch := word[i]
+                node, ok = children[ch]
+                if !ok </span><span class="cov8" title="1">{
+                        return nil, false
+                }</span>
+
+                <span class="cov8" title="1">children = node.children</span>
+        }
+
+        <span class="cov8" title="1">return node, true</span>
+}
+
+func (t *Trie) addWords(node *node, buf *[]string, words *[]string) <span class="cov8" title="1">{
+        if node.isWord </span><span class="cov8" title="1">{
+                word := strings.Join(*buf, "")
+                *words = append(*words, word)
+        }</span>
+
+        <span class="cov8" title="1">children := node.children
+
+        // make sure to init children whenever creating node, to avoid null ptr
+        if len(children) == 0 </span><span class="cov8" title="1">{
+                // exit recursion for leaf nodes
+                return
+        }</span>
+
+        // iterate over children of each children of node
+        // traverse all possible branches from node.children
+        <span class="cov8" title="1">for key, _node := range children </span><span class="cov8" title="1">{
+                *buf = append(*buf, string(key))
+                t.addWords(_node, buf, words)
+                *buf = (*buf)[:len(*buf)-1]
+        }</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
